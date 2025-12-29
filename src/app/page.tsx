@@ -1,32 +1,14 @@
-import Link from "next/link";
-import { FeatureCard } from "@/components/landing/FeatureCard";
+"use client";
 
-// Ícones Abstratos e Geométricos
+import Link from "next/link";
+
+// --- ÍCONES VISUAIS ---
 const Icons = {
   // Logo Conceitual
   LogoMark: (
     <svg className="w-full h-full text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <rect x="4" y="4" width="16" height="16" rx="2" strokeWidth={1.5} className="text-cyan-500/50" />
       <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" className="text-cyan-400" stroke="none" />
-    </svg>
-  ),
-  Grid: (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-    </svg>
-  ),
-  Layers: (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-    </svg>
-  ),
-  Node: (
-    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /> 
-      <circle cx="18" cy="5" r="3" strokeWidth={1.5} />
-      <circle cx="6" cy="12" r="3" strokeWidth={1.5} />
-      <circle cx="18" cy="19" r="3" strokeWidth={1.5} />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.59 13.51l6.83 3.98m-.01-10.98l-6.82 3.98" />
     </svg>
   ),
   ArrowRight: (
@@ -36,6 +18,83 @@ const Icons = {
   )
 };
 
+// --- COMPONENTE VISUAL: TERMINAL PREVIEW COM TYPEWRITER ---
+function TerminalPreview() {
+  return (
+    <div className="relative mx-auto max-w-2xl mt-16 perspective-1000 animate-fade-in-up delay-200 group">
+      {/* CSS Injetado para animação de digitação */}
+      <style jsx>{`
+        @keyframes typing {
+          from { width: 0; }
+          to { width: 100%; }
+        }
+        @keyframes blink {
+          50% { border-color: transparent; }
+        }
+        .typewriter-effect {
+          display: inline-block;
+          overflow: hidden;
+          white-space: nowrap;
+          border-right: 3px solid #06b6d4; /* Cyan cursor */
+          width: 0;
+          animation: 
+            typing 3.5s steps(60, end) 1s forwards, /* 1s delay, 3.5s typing */
+            blink .75s step-end infinite;
+        }
+      `}</style>
+
+      {/* Glow traseiro */}
+      <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+      
+      <div className="relative rounded-xl bg-[#0B1121] border border-slate-800 shadow-2xl overflow-hidden backdrop-blur-sm">
+        {/* Header da Janela */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800/50 bg-slate-900/50">
+          <div className="flex gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/50" />
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500/50" />
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
+          </div>
+          <div className="ml-4 text-[10px] text-slate-500 font-mono tracking-wide flex items-center gap-2">
+            <span className="text-cyan-500">⚛</span> hydration-fix.tsx
+          </div>
+        </div>
+        
+        {/* Conteúdo do Código Fake */}
+        <div className="p-6 font-mono text-sm leading-relaxed overflow-x-auto text-left">
+          {/* Linha 1 */}
+          <div className="flex gap-4 opacity-50 hover:opacity-100 transition-opacity">
+            <div className="text-slate-700 select-none text-right w-4">1</div>
+            <div className="text-slate-400">
+              <span className="text-purple-400">const</span> <span className="text-blue-400">error</span> = <span className="text-amber-300">"Hydration failed..."</span>;
+            </div>
+          </div>
+          
+          {/* Linha 2 */}
+          <div className="flex gap-4 mt-1">
+            <div className="text-slate-700 select-none text-right w-4">2</div>
+            <div className="text-slate-500 italic">
+              // TODO: Check server/client date mismatch
+            </div>
+          </div>
+
+          {/* Linha 3 (ANIMADA COM TYPEWRITER) */}
+          <div className="flex gap-4 mt-3 bg-cyan-950/20 -mx-6 px-6 py-1 border-l-2 border-cyan-500">
+            <div className="text-slate-700 select-none text-right w-4">3</div>
+            
+            {/* Container do código sendo digitado */}
+            <div className="typewriter-effect">
+               <span className="text-cyan-100">
+                  <span className="text-purple-400">return</span> <span className="text-yellow-300">dynamic</span>(() ={'>'} <span className="text-blue-400">import</span>(...), {'{'} ssr: <span className="text-red-400">false</span> {'}'});
+               </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// --- PÁGINA PRINCIPAL ---
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[#020617] text-slate-200 relative overflow-hidden flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-100">
@@ -51,7 +110,7 @@ export default function LandingPage() {
       <div className="relative z-10 flex-grow flex flex-col justify-center items-center px-6 py-20">
         
         {/* 1. HERO SECTION */}
-        <section className="text-center max-w-3xl mx-auto mb-24 space-y-8 animate-fade-in-up">
+        <section className="text-center max-w-3xl mx-auto space-y-8 animate-fade-in-up">
           
           {/* Logo Abstrata & Título */}
           <div className="flex flex-col items-center gap-6">
@@ -61,7 +120,6 @@ export default function LandingPage() {
             </div>
             
             <div className="space-y-2">
-              {/* RESTAURAÇÃO DO VISUAL: Code (Branco) + Focus (Azul/Gradiente) */}
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-white drop-shadow-xl relative inline-block">
                 Code<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Focus</span>
                 {/* Glow sutil atrás do texto */}
@@ -93,35 +151,13 @@ export default function LandingPage() {
               {Icons.ArrowRight}
             </Link>
           </div>
-        </section>
 
-        {/* 2. BENEFITS SECTION */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto w-full">
-          <FeatureCard 
-            icon={Icons.Grid}
-            title="Registro de Erros"
-            description="Documente falhas, comportamentos inesperados e aprendizados técnicos."
-          />
-          <FeatureCard 
-            icon={Icons.Layers}
-            title="Organização por Stack"
-            description="Classifique anotações por linguagem e mantenha tudo acessível."
-          />
-          <FeatureCard 
-            icon={Icons.Node}
-            title="Base de Conhecimento"
-            description="Transforme erros recorrentes em soluções reutilizáveis."
-          />
+          {/* 3. TERMINAL PREVIEW */}
+          <TerminalPreview />
+
         </section>
 
       </div>
-
-      {/* 3. FOOTER */}
-      <footer className="relative z-10 py-8 text-center border-t border-white/5">
-        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-bold">
-          By Finneo Corporation
-        </p>
-      </footer>
 
     </main>
   );
