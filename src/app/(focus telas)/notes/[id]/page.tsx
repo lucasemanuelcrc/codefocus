@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useNotes, NoteStatus } from "@/context/NotesContext";
-import { toast } from "sonner";
+import { CodeBlock } from "@/components/ui/CodeBlock"; // <--- Importamos o novo componente
 
 // --- ÍCONES ---
 const Icons = {
@@ -11,9 +11,9 @@ const Icons = {
   Trash: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Calendar: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
   Tag: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>,
-  Copy: <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
 };
 
+// --- SKELETON ---
 function DetailsSkeleton() {
   return (
     <div className="min-h-screen bg-[#020617] font-sans pb-20">
@@ -64,13 +64,6 @@ export default function NoteDetailsPage() {
     updateStatus(note.id, cycle[note.status]);
   };
 
-  const handleCopyCode = () => {
-    if (note?.codeSnippet) {
-      navigator.clipboard.writeText(note.codeSnippet);
-      toast.success("Código copiado!", { description: "Pronto para colar no seu editor.", duration: 2000 });
-    }
-  };
-
   if (isLoading) return <DetailsSkeleton />;
   if (!note) {
     return (
@@ -113,21 +106,13 @@ export default function NoteDetailsPage() {
             </p>
           </div>
 
+          {/* SESSÃO DE CÓDIGO COM SYNTAX HIGHLIGHTING */}
           {note.codeSnippet && (
             <div className="space-y-2">
                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest px-1">Snippet / Log de Erro</h3>
-               <div className="bg-[#050a14] border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-                 <div className="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800/50">
-                    <div className="flex items-center gap-2">
-                        <div className="flex gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500/20" /><div className="w-2.5 h-2.5 rounded-full bg-amber-500/20" /><div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20" /></div>
-                        <span className="text-[10px] text-slate-500 font-mono ml-2">code-preview</span>
-                    </div>
-                    <button onClick={handleCopyCode} className="flex items-center gap-1.5 text-[10px] font-mono uppercase font-bold text-cyan-500 hover:text-cyan-300 transition-colors">{Icons.Copy} Copiar</button>
-                 </div>
-                 <div className="p-6 overflow-x-auto">
-                    <pre className="font-mono text-sm text-cyan-100 leading-relaxed">{note.codeSnippet}</pre>
-                 </div>
-               </div>
+               
+               {/* Usando o novo componente */}
+               <CodeBlock code={note.codeSnippet} language="tsx" />
             </div>
           )}
         </div>
