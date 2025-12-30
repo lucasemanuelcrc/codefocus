@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useNotes, NoteStatus, Note } from "@/context/NotesContext";
 import { KanbanBoard } from "@/components/domain/KanbanBoard";
 
-// --- ÍCONES (Inline para evitar dependências externas) ---
+// --- ÍCONES (Inline) ---
 const Icons = {
   Logo: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={2} /></svg>,
   Home: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
@@ -20,9 +20,10 @@ const Icons = {
   LayoutGrid: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   LayoutKanban: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>,
   Eye: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
+  ChevronRight: <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>,
 };
 
-// --- SUB-COMPONENTS (Definidos no mesmo arquivo para simplicidade) ---
+// --- SUB-COMPONENTS ---
 
 function DashboardSkeleton() {
   return (
@@ -89,17 +90,14 @@ function StatCard({ label, value, icon, colorClass }: { label: string; value: nu
   );
 }
 
-// --- PÁGINA PRINCIPAL (Monolítica) ---
+// --- PÁGINA PRINCIPAL ---
 export default function DashboardPage() {
   const { notes, addNote, updateNote, deleteNote, updateStatus, isLoading } = useNotes();
    
-  // Controle de Estado
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
-   
-  // Estado da Visualização
   const [viewMode, setViewMode] = useState<'grid' | 'kanban'>('grid');
 
   // Form Fields
@@ -156,11 +154,13 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen bg-[#020617] text-slate-200 font-sans overflow-hidden">
       
-      {/* SIDEBAR (Integrada) */}
-      <aside className="w-64 border-r border-slate-800/60 bg-[#020617] flex flex-col hidden md:flex z-20 relative">
-        <div className="p-6 border-b border-slate-800/60">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight text-white">
-            <div className="w-6 h-6 bg-cyan-500/20 rounded-md flex items-center justify-center text-cyan-400">{Icons.Logo}</div>
+      {/* SIDEBAR */}
+      <aside className="w-64 border-r border-slate-800/60 bg-[#020617] flex flex-col hidden md:flex z-50 relative">
+        {/* TOPO DA SIDEBAR (Sincronizado com Header) */}
+        {/* MUDANÇA: h-16, bg-slate-900/80, border-b border-cyan-500/20 */}
+        <div className="h-16 px-6 flex items-center border-b border-cyan-500/20 bg-slate-900/80 backdrop-blur-xl">
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight text-white hover:opacity-80 transition-opacity">
+            <div className="w-6 h-6 bg-cyan-500/20 rounded-md flex items-center justify-center text-cyan-400 shadow-[0_0_10px_-3px_rgba(6,182,212,0.5)]">{Icons.Logo}</div>
             CodeFocus
           </Link>
         </div>
@@ -171,7 +171,7 @@ export default function DashboardPage() {
             <nav className="space-y-1">
               <button 
                 onClick={() => setActiveTag(null)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTag === null ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTag === null ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-500/10' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'}`}
               >
                 {Icons.Home} Todas as Notas
               </button>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
                 <button 
                   key={tag} 
                   onClick={() => setActiveTag(tag)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${activeTag === tag ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${activeTag === tag ? 'bg-cyan-900/20 text-cyan-400 border border-cyan-500/10' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'}`}
                 >
                   {Icons.Hash} {tag}
                 </button>
@@ -196,19 +196,27 @@ export default function DashboardPage() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
-        {/* Efeitos de Fundo */}
+        {/* Background Effects */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-20" style={{ backgroundImage: 'linear-gradient(#1e293b 1px, transparent 1px), linear-gradient(90deg, #1e293b 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
         <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#020617] via-transparent to-[#020617] pointer-events-none"></div>
 
-        {/* HEADER (Integrado) */}
-        <header className="relative z-10 px-8 py-6 flex justify-between items-center">
-           <div>
-             <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-             <p className="text-slate-500 text-sm">Bem-vindo de volta, Dev.</p>
+        {/* HEADER (Sticky & Unified) */}
+        {/* MUDANÇA: h-16, sticky, bg-slate-900/80, border-b border-cyan-500/20 */}
+        <header className="sticky top-0 z-40 w-full h-16 px-8 flex justify-between items-center border-b border-cyan-500/20 bg-slate-900/80 backdrop-blur-xl shadow-[0_4px_20px_-5px_rgba(0,0,0,0.5)]">
+           <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono uppercase tracking-widest">
+              <span className="hover:text-cyan-400 cursor-pointer transition-colors">CodeFocus</span>
+              <span className="text-slate-700 text-[8px]">{Icons.ChevronRight}</span>
+              <span className="text-cyan-500 font-bold drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">Dashboard</span>
+           </div>
+
+           <div className="flex items-center gap-4">
+             <p className="text-slate-500 text-sm hidden md:block">Bem-vindo, <span className="text-cyan-400 font-semibold">Dev</span>.</p>
+             <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center text-xs font-bold text-cyan-400 shadow-inner">DV</div>
            </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-8 pb-20 relative z-10 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+        {/* SCROLLABLE AREA */}
+        <div className="flex-1 overflow-y-auto px-8 pt-8 pb-20 relative z-10 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
           
           {/* STATS CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -217,7 +225,7 @@ export default function DashboardPage() {
             <StatCard label="Solucionados" value={solvedCount} icon={Icons.CheckCircle} colorClass="bg-emerald-500/20 text-emerald-400" />
           </div>
 
-          {/* BARRA DE FILTRO E AÇÕES */}
+          {/* FILTER & ACTIONS */}
           <div className="flex flex-col md:flex-row gap-4 mb-8 items-center justify-between">
             <div className="relative w-full md:w-96 group">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-500 transition-colors">{Icons.Search}</div>
@@ -278,7 +286,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* LISTA DE NOTAS (Grid ou Kanban) */}
+          {/* LISTA DE NOTAS */}
           {filteredNotes.length === 0 ? (
              <div className="flex flex-col items-center justify-center py-20 opacity-40 border-2 border-dashed border-slate-800 rounded-xl">
                 <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-500">
