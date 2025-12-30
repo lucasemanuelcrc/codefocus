@@ -4,9 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useNotes, NoteStatus } from "@/context/NotesContext";
 import { toast } from "sonner";
-// 1. IMPORTAR REACT-MARKDOWN
-import ReactMarkdown from "react-markdown";
 
+// --- ÍCONES ---
 const Icons = {
   ArrowLeft: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
   Trash: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
@@ -109,26 +108,9 @@ export default function NoteDetailsPage() {
         <div className="grid gap-8">
           <div className="bg-[#0B1121]/50 border border-slate-800 rounded-xl p-6 md:p-8">
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Contexto & Descrição</h3>
-            <div className="text-slate-300 leading-relaxed text-sm md:text-base">
-                {/* 2. RENDERIZAÇÃO MARKDOWN COM ESTILOS TAILWIND */}
-                <ReactMarkdown
-                  components={{
-                    // Personalizando elementos para o tema High-End
-                    strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
-                    em: ({node, ...props}) => <em className="text-cyan-200 not-italic" {...props} />,
-                    ul: ({node, ...props}) => <ul className="list-disc pl-4 space-y-1 my-2" {...props} />,
-                    ol: ({node, ...props}) => <ol className="list-decimal pl-4 space-y-1 my-2" {...props} />,
-                    li: ({node, ...props}) => <li className="pl-1" {...props} />,
-                    h1: ({node, ...props}) => <h1 className="text-xl font-bold text-white mt-4 mb-2" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-lg font-bold text-white mt-4 mb-2" {...props} />,
-                    a: ({node, ...props}) => <a className="text-cyan-400 hover:underline cursor-pointer" {...props} />,
-                    code: ({node, ...props}) => <code className="bg-slate-800 text-cyan-200 px-1 py-0.5 rounded font-mono text-xs" {...props} />,
-                    p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
-                  }}
-                >
-                  {note.description}
-                </ReactMarkdown>
-            </div>
+            <p className="text-slate-300 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
+                {note.description}
+            </p>
           </div>
 
           {note.codeSnippet && (

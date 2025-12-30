@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams, usePathname, useRouter } from "next/navigation"; // 1. Hooks de URL
 import { useNotes, NoteStatus, Note } from "@/context/NotesContext";
 
-// --- ÍCONES (Mantidos) ---
+// --- ÍCONES ---
 const Icons = {
   Logo: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={2} /></svg>,
   Home: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
@@ -90,72 +89,30 @@ function StatCard({ label, value, icon, colorClass }: { label: string; value: nu
 export default function DashboardPage() {
   const { notes, addNote, updateNote, deleteNote, updateStatus, isLoading } = useNotes();
   
-  // 2. Integração com URL Search Params
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const { replace } = useRouter();
-
-  // Ler estado inicial da URL
-  const currentTag = searchParams.get('tag');
-  const initialSearch = searchParams.get('q') || '';
-
-  // Estado local apenas para o input (evita lag ao digitar)
-  const [localSearch, setLocalSearch] = useState(initialSearch);
-
-  // Estados de UI (Formulário)
+  // Controle de Estado Local (Simples e Rápido)
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
   // Form Fields
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newCode, setNewCode] = useState("");
   const [newTags, setNewTags] = useState("");
 
-  // Stats Derivados
   const totalNotes = notes.length;
   const activeBugs = notes.filter(n => n.status === 'bug').length;
   const solvedCount = notes.filter(n => n.status === 'solved').length;
   const allTags = Array.from(new Set(notes.flatMap(n => n.tags || [])));
 
-  // 3. Função para Atualizar URL (Filtros)
-  const handleFilterUpdate = (key: 'tag' | 'q', value: string | null) => {
-    const params = new URLSearchParams(searchParams);
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    replace(`${pathname}?${params.toString()}`);
-  };
-
-  // Debounce na busca (Atualiza URL após usuário parar de digitar)
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      // Só atualiza se for diferente da URL atual para evitar loop
-      if (localSearch !== initialSearch) {
-        handleFilterUpdate('q', localSearch);
-      }
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localSearch]);
-
-  // 4. Lógica de Filtragem usando SearchParams
   const filteredNotes = notes.filter(note => {
-    const searchLower = (currentTag ? "" : localSearch).toLowerCase(); // Prioriza Tag se selecionada? Não, combina.
-    const urlSearchLower = (searchParams.get('q') || '').toLowerCase(); // Usa o da URL para consistência na filtragem final
-
-    const matchesSearch = note.title.toLowerCase().includes(urlSearchLower) || 
-                          note.description.toLowerCase().includes(urlSearchLower);
-    
-    const matchesTag = currentTag ? note.tags?.includes(currentTag) : true;
-    
+    const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          note.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTag = activeTag ? note.tags?.includes(activeTag) : true;
     return matchesSearch && matchesTag;
   });
 
-  // Funções de CRUD (Mantidas)
   const startEditing = (note: Note) => {
     setNewTitle(note.title);
     setNewDesc(note.description);
@@ -192,7 +149,7 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen bg-[#020617] text-slate-200 font-sans overflow-hidden">
       
-      {/* SIDEBAR (Com Active State via URL) */}
+      {/* SIDEBAR */}
       <aside className="w-64 border-r border-slate-800/60 bg-[#020617] flex flex-col hidden md:flex z-20 relative">
         <div className="p-6 border-b border-slate-800/60">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight text-white">
@@ -206,8 +163,8 @@ export default function DashboardPage() {
             <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Workspace</h3>
             <nav className="space-y-1">
               <button 
-                onClick={() => handleFilterUpdate('tag', null)} // Limpa tag
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentTag === null ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+                onClick={() => setActiveTag(null)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTag === null ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
               >
                 {Icons.Home} Todas as Notas
               </button>
@@ -219,8 +176,8 @@ export default function DashboardPage() {
               {allTags.map(tag => (
                 <button 
                   key={tag} 
-                  onClick={() => handleFilterUpdate('tag', tag)} // Define tag na URL
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${currentTag === tag ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+                  onClick={() => setActiveTag(tag)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${activeTag === tag ? 'bg-cyan-900/20 text-cyan-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
                 >
                   {Icons.Hash} {tag}
                 </button>
@@ -255,9 +212,9 @@ export default function DashboardPage() {
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-500 transition-colors">{Icons.Search}</div>
               <input 
                 type="text" 
-                placeholder="Buscar..." 
-                value={localSearch} // Controlado localmente
-                onChange={e => setLocalSearch(e.target.value)} 
+                placeholder="Buscar por erro..." 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
                 className="w-full bg-[#0B1121] border border-slate-800 rounded-lg py-2.5 pl-10 pr-4 text-sm text-slate-200 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600" 
               />
             </div>
@@ -272,7 +229,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* FORMULÁRIO (Mantido) */}
+          {/* FORMULÁRIO */}
           {isCreating && (
             <div className="mb-8 bg-[#0B1121] border border-slate-800 rounded-xl p-6 animate-fade-in-up shadow-2xl relative z-20">
               <form onSubmit={handleCreateOrUpdate} className="space-y-4">
@@ -281,7 +238,7 @@ export default function DashboardPage() {
                 </div>
                 <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Título..." className="w-full bg-[#020617] border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-cyan-500 outline-none" autoFocus />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Descrição (Markdown Suportado)..." className="w-full bg-[#020617] border border-slate-700 rounded-lg px-4 py-3 text-slate-300 focus:border-cyan-500 outline-none h-32 resize-none text-sm font-mono" />
+                  <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Descrição..." className="w-full bg-[#020617] border border-slate-700 rounded-lg px-4 py-3 text-slate-300 focus:border-cyan-500 outline-none h-32 resize-none text-sm" />
                   <textarea value={newCode} onChange={e => setNewCode(e.target.value)} placeholder="Código..." className="w-full bg-[#020617] border border-slate-700 rounded-lg px-4 py-3 text-cyan-200 font-mono text-xs leading-relaxed focus:border-cyan-500 outline-none h-32 resize-none" />
                 </div>
                 <input type="text" value={newTags} onChange={e => setNewTags(e.target.value)} placeholder="Tags..." className="w-full bg-[#020617] border border-slate-700 rounded-lg px-4 py-2 text-slate-300 focus:border-cyan-500 outline-none text-sm" />
@@ -293,7 +250,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* GRID (Mantido) */}
+          {/* GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-10">
             {filteredNotes.map((note) => (
               <div key={note.id} className="group relative bg-[#0B1121]/80 backdrop-blur-sm border border-slate-800 rounded-xl overflow-hidden hover:border-cyan-500/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-900/5 hover:-translate-y-1 flex flex-col">
