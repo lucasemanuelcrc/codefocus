@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-// 1. IMPORTAR A FUNÇÃO TOAST
 import { toast } from "sonner";
 
 export type NoteStatus = "bug" | "investigating" | "solved";
@@ -22,6 +21,8 @@ interface NotesContextType {
   addNote: (note: Omit<Note, "id" | "createdAt">) => void;
   deleteNote: (id: string) => void;
   updateStatus: (id: string, newStatus: NoteStatus) => void;
+  // 1. Nova função na interface
+  updateNote: (id: string, updatedData: Partial<Omit<Note, "id" | "createdAt">>) => void;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -55,20 +56,24 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       ...noteData,
     };
     setNotes((prev) => [newNote, ...prev]);
-    
-    // 2. FEEDBACK DE SUCESSO
     toast.success("Registro criado!", {
       description: `"${newNote.title}" foi adicionado ao workspace.`,
     });
   };
 
+  // 2. Implementação da atualização
+  const updateNote = (id: string, updatedData: Partial<Omit<Note, "id" | "createdAt">>) => {
+    setNotes((prev) =>
+      prev.map((note) => (note.id === id ? { ...note, ...updatedData } : note))
+    );
+    toast.success("Registro atualizado!", {
+      description: "As alterações foram salvas com sucesso.",
+    });
+  };
+
   const deleteNote = (id: string) => {
-    // Salvamos a nota antes de deletar para poder desfazer (Opcional, mas elegante)
-    const noteToDelete = notes.find(n => n.id === id);
-    
+    const noteToDelete = notes.find((n) => n.id === id);
     setNotes((prev) => prev.filter((n) => n.id !== id));
-    
-    // 3. FEEDBACK DE REMOÇÃO COM UNDO (DESFAZER)
     toast.error("Registro movido para lixeira", {
       description: noteToDelete?.title,
       action: {
@@ -87,12 +92,10 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     setNotes((prev) =>
       prev.map((n) => (n.id === id ? { ...n, status: newStatus } : n))
     );
-    // Nota: Geralmente não mostramos toast para mudança de status rápida 
-    // para não poluir a tela, mas você pode adicionar se quiser.
   };
 
   return (
-    <NotesContext.Provider value={{ notes, isLoading, addNote, deleteNote, updateStatus }}>
+    <NotesContext.Provider value={{ notes, isLoading, addNote, deleteNote, updateStatus, updateNote }}>
       {children}
     </NotesContext.Provider>
   );

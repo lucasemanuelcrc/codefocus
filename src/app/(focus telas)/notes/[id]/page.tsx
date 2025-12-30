@@ -3,7 +3,6 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useNotes, NoteStatus } from "@/context/NotesContext";
-// 1. Importação do Sonner
 import { toast } from "sonner";
 
 // --- ÍCONES ---
@@ -14,6 +13,39 @@ const Icons = {
   Tag: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>,
   Copy: <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
 };
+
+// --- COMPONENTE: SKELETON LOADING (NOVO) ---
+function DetailsSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#020617] font-sans pb-20">
+       {/* Header Skeleton */}
+       <div className="border-b border-slate-800/60 bg-[#020617]/50 backdrop-blur-md sticky top-0 z-20 h-[73px]" />
+       
+       <div className="max-w-4xl mx-auto px-6 py-10 space-y-8 animate-pulse">
+         {/* Meta Info */}
+         <div className="space-y-4">
+            <div className="flex gap-3">
+               <div className="h-6 w-20 bg-slate-800 rounded-full" />
+               <div className="h-6 w-32 bg-slate-800 rounded-full" />
+            </div>
+            {/* Title */}
+            <div className="h-10 w-3/4 bg-slate-800 rounded-lg" />
+            {/* Tags */}
+            <div className="flex gap-2">
+               <div className="h-6 w-16 bg-slate-800 rounded" />
+               <div className="h-6 w-24 bg-slate-800 rounded" />
+            </div>
+         </div>
+
+         {/* Description Box */}
+         <div className="h-40 w-full bg-slate-800/40 border border-slate-800 rounded-xl" />
+         
+         {/* Code Box */}
+         <div className="h-64 w-full bg-slate-800/40 border border-slate-800 rounded-xl" />
+       </div>
+    </div>
+  )
+}
 
 // --- BADGE DE STATUS ---
 function StatusBadge({ status, onClick }: { status: NoteStatus; onClick?: () => void }) {
@@ -42,7 +74,6 @@ export default function NoteDetailsPage() {
   const note = notes.find((n) => n.id === params.id);
 
   const handleDelete = () => {
-    // O toast de "deletado" já é disparado pelo Context, então só precisamos confirmar e redirecionar
     if (confirm("Tem certeza que deseja excluir este registro?")) {
       if (note) deleteNote(note.id);
       router.push("/dashboard");
@@ -55,7 +86,6 @@ export default function NoteDetailsPage() {
     updateStatus(note.id, cycle[note.status]);
   };
 
-  // Função para copiar código com feedback do Sonner
   const handleCopyCode = () => {
     if (note?.codeSnippet) {
       navigator.clipboard.writeText(note.codeSnippet);
@@ -66,13 +96,8 @@ export default function NoteDetailsPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
-        <div className="text-cyan-500 font-mono animate-pulse">Carregando dados...</div>
-      </div>
-    );
-  }
+  // 1. USO DO SKELETON
+  if (isLoading) return <DetailsSkeleton />;
 
   if (!note) {
     return (
@@ -155,7 +180,6 @@ export default function NoteDetailsPage() {
                         <span className="text-[10px] text-slate-500 font-mono ml-2">code-preview</span>
                     </div>
 
-                    {/* Botão de Copiar Integrado */}
                     <button 
                         onClick={handleCopyCode}
                         className="flex items-center gap-1.5 text-[10px] font-mono uppercase font-bold text-cyan-500 hover:text-cyan-300 transition-colors"
