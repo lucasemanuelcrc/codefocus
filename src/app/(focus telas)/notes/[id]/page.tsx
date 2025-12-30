@@ -4,8 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useNotes, NoteStatus } from "@/context/NotesContext";
 import { toast } from "sonner";
+// 1. IMPORTAR REACT-MARKDOWN
+import ReactMarkdown from "react-markdown";
 
-// --- ÍCONES ---
 const Icons = {
   ArrowLeft: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
   Trash: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
@@ -14,40 +15,23 @@ const Icons = {
   Copy: <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
 };
 
-// --- COMPONENTE: SKELETON LOADING (NOVO) ---
 function DetailsSkeleton() {
   return (
     <div className="min-h-screen bg-[#020617] font-sans pb-20">
-       {/* Header Skeleton */}
        <div className="border-b border-slate-800/60 bg-[#020617]/50 backdrop-blur-md sticky top-0 z-20 h-[73px]" />
-       
        <div className="max-w-4xl mx-auto px-6 py-10 space-y-8 animate-pulse">
-         {/* Meta Info */}
          <div className="space-y-4">
-            <div className="flex gap-3">
-               <div className="h-6 w-20 bg-slate-800 rounded-full" />
-               <div className="h-6 w-32 bg-slate-800 rounded-full" />
-            </div>
-            {/* Title */}
+            <div className="flex gap-3"><div className="h-6 w-20 bg-slate-800 rounded-full" /><div className="h-6 w-32 bg-slate-800 rounded-full" /></div>
             <div className="h-10 w-3/4 bg-slate-800 rounded-lg" />
-            {/* Tags */}
-            <div className="flex gap-2">
-               <div className="h-6 w-16 bg-slate-800 rounded" />
-               <div className="h-6 w-24 bg-slate-800 rounded" />
-            </div>
+            <div className="flex gap-2"><div className="h-6 w-16 bg-slate-800 rounded" /><div className="h-6 w-24 bg-slate-800 rounded" /></div>
          </div>
-
-         {/* Description Box */}
          <div className="h-40 w-full bg-slate-800/40 border border-slate-800 rounded-xl" />
-         
-         {/* Code Box */}
          <div className="h-64 w-full bg-slate-800/40 border border-slate-800 rounded-xl" />
        </div>
     </div>
   )
 }
 
-// --- BADGE DE STATUS ---
 function StatusBadge({ status, onClick }: { status: NoteStatus; onClick?: () => void }) {
   const styles = {
     bug: "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20",
@@ -55,12 +39,8 @@ function StatusBadge({ status, onClick }: { status: NoteStatus; onClick?: () => 
     solved: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
   };
   const labels = { bug: "Bug", investigating: "Investigating", solved: "Solved" };
-
   return (
-    <button 
-      onClick={onClick} 
-      className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider border transition-all ${styles[status]}`}
-    >
+    <button onClick={onClick} className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider border transition-all ${styles[status]}`}>
       {labels[status]}
     </button>
   );
@@ -70,7 +50,6 @@ export default function NoteDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { notes, isLoading, deleteNote, updateStatus } = useNotes();
-  
   const note = notes.find((n) => n.id === params.id);
 
   const handleDelete = () => {
@@ -89,16 +68,11 @@ export default function NoteDetailsPage() {
   const handleCopyCode = () => {
     if (note?.codeSnippet) {
       navigator.clipboard.writeText(note.codeSnippet);
-      toast.success("Código copiado!", {
-        description: "Pronto para colar no seu editor.",
-        duration: 2000,
-      });
+      toast.success("Código copiado!", { description: "Pronto para colar no seu editor.", duration: 2000 });
     }
   };
 
-  // 1. USO DO SKELETON
   if (isLoading) return <DetailsSkeleton />;
-
   if (!note) {
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center text-slate-400 space-y-4">
@@ -111,87 +85,65 @@ export default function NoteDetailsPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans pb-20">
-      
-      {/* Header */}
       <header className="border-b border-slate-800/60 bg-[#020617]/50 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium">
-            {Icons.ArrowLeft} Voltar
-          </Link>
+          <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium">{Icons.ArrowLeft} Voltar</Link>
           <div className="flex gap-2">
-            <button 
-              onClick={handleDelete}
-              className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-              title="Excluir Nota"
-            >
-              {Icons.Trash}
-            </button>
+            <button onClick={handleDelete} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Excluir Nota">{Icons.Trash}</button>
           </div>
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
       <main className="max-w-4xl mx-auto px-6 py-10 animate-fade-in-up">
-        
-        {/* Info Header */}
         <div className="mb-8 space-y-4">
           <div className="flex flex-wrap items-center gap-3">
              <StatusBadge status={note.status} onClick={cycleStatus} />
-             <div className="flex items-center gap-1 text-xs text-slate-500 font-mono uppercase tracking-wide">
-                {Icons.Calendar} {new Date(note.createdAt).toLocaleDateString()}
-             </div>
+             <div className="flex items-center gap-1 text-xs text-slate-500 font-mono uppercase tracking-wide">{Icons.Calendar} {new Date(note.createdAt).toLocaleDateString()}</div>
           </div>
-          
-          <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-            {note.title}
-          </h1>
-
+          <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">{note.title}</h1>
           <div className="flex flex-wrap gap-2">
-            {note.tags?.map((tag, i) => (
-              <span key={i} className="flex items-center gap-1 text-xs bg-slate-800 text-cyan-200/80 px-2.5 py-1 rounded border border-slate-700">
-                {Icons.Tag} {tag}
-              </span>
-            ))}
+            {note.tags?.map((tag, i) => <span key={i} className="flex items-center gap-1 text-xs bg-slate-800 text-cyan-200/80 px-2.5 py-1 rounded border border-slate-700">{Icons.Tag} {tag}</span>)}
           </div>
         </div>
 
-        {/* Corpo da Nota */}
         <div className="grid gap-8">
           <div className="bg-[#0B1121]/50 border border-slate-800 rounded-xl p-6 md:p-8">
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Contexto & Descrição</h3>
-            <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
-              {note.description}
-            </p>
+            <div className="text-slate-300 leading-relaxed text-sm md:text-base">
+                {/* 2. RENDERIZAÇÃO MARKDOWN COM ESTILOS TAILWIND */}
+                <ReactMarkdown
+                  components={{
+                    // Personalizando elementos para o tema High-End
+                    strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
+                    em: ({node, ...props}) => <em className="text-cyan-200 not-italic" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc pl-4 space-y-1 my-2" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal pl-4 space-y-1 my-2" {...props} />,
+                    li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                    h1: ({node, ...props}) => <h1 className="text-xl font-bold text-white mt-4 mb-2" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-lg font-bold text-white mt-4 mb-2" {...props} />,
+                    a: ({node, ...props}) => <a className="text-cyan-400 hover:underline cursor-pointer" {...props} />,
+                    code: ({node, ...props}) => <code className="bg-slate-800 text-cyan-200 px-1 py-0.5 rounded font-mono text-xs" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                  }}
+                >
+                  {note.description}
+                </ReactMarkdown>
+            </div>
           </div>
 
-          {/* Code Snippet com Botão de Copiar */}
           {note.codeSnippet && (
             <div className="space-y-2">
                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest px-1">Snippet / Log de Erro</h3>
-               
                <div className="bg-[#050a14] border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
                  <div className="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800/50">
                     <div className="flex items-center gap-2">
-                        <div className="flex gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500/20" />
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20" />
-                        </div>
+                        <div className="flex gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500/20" /><div className="w-2.5 h-2.5 rounded-full bg-amber-500/20" /><div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20" /></div>
                         <span className="text-[10px] text-slate-500 font-mono ml-2">code-preview</span>
                     </div>
-
-                    <button 
-                        onClick={handleCopyCode}
-                        className="flex items-center gap-1.5 text-[10px] font-mono uppercase font-bold text-cyan-500 hover:text-cyan-300 transition-colors"
-                    >
-                        {Icons.Copy} Copiar
-                    </button>
+                    <button onClick={handleCopyCode} className="flex items-center gap-1.5 text-[10px] font-mono uppercase font-bold text-cyan-500 hover:text-cyan-300 transition-colors">{Icons.Copy} Copiar</button>
                  </div>
-                 
                  <div className="p-6 overflow-x-auto">
-                    <pre className="font-mono text-sm text-cyan-100 leading-relaxed">
-                      {note.codeSnippet}
-                    </pre>
+                    <pre className="font-mono text-sm text-cyan-100 leading-relaxed">{note.codeSnippet}</pre>
                  </div>
                </div>
             </div>
