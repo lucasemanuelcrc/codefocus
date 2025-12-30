@@ -1,77 +1,86 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Note } from '@/types';
+import React, { createContext, useContext, useState, useEffect } from "react";
+
+// 1. Definição Tipada da Nota (Developer-First)
+export type NoteStatus = "bug" | "investigating" | "solved";
+
+export interface Note {
+  id: string;
+  title: string;
+  description: string;
+  codeSnippet?: string; // Novo: Código do erro ou solução
+  tags: string[];       // Novo: Stack (React, TS, etc)
+  status: NoteStatus;   // Novo: Estado do problema
+  createdAt: string;
+}
 
 interface NotesContextType {
   notes: Note[];
-  addNote: (note: Omit<Note, 'id' | 'createdAt' | 'status'>) => void;
-  toggleStatus: (id: string) => void;
+  isLoading: boolean;
+  addNote: (note: Omit<Note, "id" | "createdAt">) => void;
   deleteNote: (id: string) => void;
-  getNote: (id: string) => Note | undefined;
-  isLoading: boolean; // 👈 OBRIGATÓRIO
+  updateStatus: (id: string, newStatus: NoteStatus) => void; // Novo: Quick Toggle
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
 
 export function NotesProvider({ children }: { children: React.ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
-  // 1. Inicia como TRUE para impedir renderizações prematuras
   const [isLoading, setIsLoading] = useState(true);
 
+  // Carregar do LocalStorage
   useEffect(() => {
-    // 2. Busca do LocalStorage
-    const saved = localStorage.getItem('codefocus_db');
+    const saved = localStorage.getItem("codefocus-notes");
     if (saved) {
       try {
         setNotes(JSON.parse(saved));
       } catch (e) {
-        console.error("Erro ao parsear notas:", e);
+        console.error("Erro ao carregar notas", e);
       }
     }
-    // 3. Só libera a UI depois de processar os dados locais
     setIsLoading(false);
   }, []);
 
+  // Salvar no LocalStorage
   useEffect(() => {
-    // Só salva se já tiver carregado (para não sobrescrever com array vazio no boot)
     if (!isLoading) {
-      localStorage.setItem('codefocus_db', JSON.stringify(notes));
+      localStorage.setItem("codefocus-notes", JSON.stringify(notes));
     }
   }, [notes, isLoading]);
 
-  // Helpers de CRUD
-  const addNote = (data: Omit<Note, 'id' | 'createdAt' | 'status'>) => {
+  const addNote = (noteData: Omit<Note, "id" | "createdAt">) => {
     const newNote: Note = {
-      ...data,
       id: crypto.randomUUID(),
-      status: 'open',
       createdAt: new Date().toISOString(),
+      ...noteData,
     };
+    // Adiciona no topo da lista
     setNotes((prev) => [newNote, ...prev]);
   };
 
-  const toggleStatus = (id: string) => {
-    setNotes((prev) => prev.map(n => 
-      n.id === id ? { ...n, status: n.status === 'open' ? 'resolved' : 'open' } : n
-    ));
-  };
-
   const deleteNote = (id: string) => {
-    setNotes((prev) => prev.filter(n => n.id !== id));
+    setNotes((prev) => prev.filter((n) => n.id !== id));
   };
 
-  const getNote = (id: string) => notes.find(n => n.id === id);
+  // Função para mudar status sem abrir a nota
+  const updateStatus = (id: string, newStatus: NoteStatus) => {
+    setNotes((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, status: newStatus } : n))
+    );
+  };
 
   return (
-    <NotesContext.Provider value={{ notes, addNote, toggleStatus, deleteNote, getNote, isLoading }}>
+    <NotesContext.Provider value={{ notes, isLoading, addNote, deleteNote, updateStatus }}>
       {children}
     </NotesContext.Provider>
   );
 }
 
-export const useNotes = () => {
+export function useNotes() {
   const context = useContext(NotesContext);
-  if (!context) throw new Error("useNotes must be used within NotesProvider");
+  if (context === undefined) {
+    throw new Error("useNotes must be used within a NotesProvider");
+  }
   return context;
-};
+}

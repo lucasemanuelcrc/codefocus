@@ -1,29 +1,46 @@
 "use client";
 
-import { useNotes } from "@/context/NotesContext";
+import { useNotes, NoteStatus } from "@/context/NotesContext";
 import { ExpandableNoteCard } from "@/components/domain/ExpandableNoteCard";
 import Link from "next/link";
 import { useState } from "react";
 
 export default function NotesPage() {
-  const { notes, toggleStatus, deleteNote } = useNotes();
-  const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
+  // 1. CORREÇÃO: Usamos updateStatus em vez de toggleStatus
+  const { notes, updateStatus, deleteNote } = useNotes();
+  
+  // 2. CORREÇÃO: Atualizamos o estado do filtro para usar 'solved'
+  const [filter, setFilter] = useState<'all' | 'open' | 'solved'>('all');
 
   // Stats
   const totalNotes = notes.length;
-  const resolvedNotes = notes.filter(n => n.status === 'resolved').length;
-  const openNotes = totalNotes - resolvedNotes;
+  // 3. CORREÇÃO: Comparação correta com 'solved'
+  const solvedNotes = notes.filter(n => n.status === 'solved').length;
+  const openNotes = totalNotes - solvedNotes;
 
   // Filter Logic
   const filteredNotes = notes.filter(note => {
     if (filter === 'all') return true;
-    return note.status === filter;
+    if (filter === 'solved') return note.status === 'solved';
+    // "Em Aberto" agora agrupa 'bug' e 'investigating'
+    if (filter === 'open') return note.status === 'bug' || note.status === 'investigating';
+    return true;
   });
+
+  // Função auxiliar para simular o antigo "Toggle" (Alterna entre Solved e Bug)
+  const handleToggle = (id: string) => {
+    const note = notes.find((n) => n.id === id);
+    if (!note) return;
+    
+    // Se está resolvido, volta para bug. Se não, marca como resolvido.
+    const newStatus: NoteStatus = note.status === 'solved' ? 'bug' : 'solved';
+    updateStatus(id, newStatus);
+  };
 
   return (
     <main className="min-h-screen bg-[#020617] text-slate-200">
       
-      {/* Background Decor (Mais sutil que a dashboard) */}
+      {/* Background Decor */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-900/5 rounded-full blur-[100px]" />
       </div>
@@ -52,7 +69,7 @@ export default function NotesPage() {
                 <span className="text-[10px] text-slate-500 uppercase tracking-wider">Total</span>
               </div>
               <div className="bg-slate-900/50 border border-slate-800 rounded-lg px-4 py-2 text-center">
-                <span className="block text-xl font-bold text-emerald-400">{resolvedNotes}</span>
+                <span className="block text-xl font-bold text-emerald-400">{solvedNotes}</span>
                 <span className="text-[10px] text-slate-500 uppercase tracking-wider">Resolvidos</span>
               </div>
             </div>
@@ -60,20 +77,24 @@ export default function NotesPage() {
 
           {/* Filtros Tabs */}
           <div className="flex items-center gap-1 p-1 bg-slate-900/80 border border-slate-800 rounded-lg w-fit">
-            {(['all', 'open', 'resolved'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`
-                  px-4 py-1.5 rounded-md text-xs font-medium transition-all
-                  ${filter === f 
-                    ? 'bg-slate-800 text-white shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}
-                `}
-              >
-                {f === 'all' ? 'Todos' : f === 'open' ? 'Em Aberto' : 'Resolvidos'}
-              </button>
-            ))}
+            <button
+                onClick={() => setFilter('all')}
+                className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${filter === 'all' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+                Todos
+            </button>
+            <button
+                onClick={() => setFilter('open')}
+                className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${filter === 'open' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+                Em Aberto
+            </button>
+            <button
+                onClick={() => setFilter('solved')}
+                className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${filter === 'solved' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+                Resolvidos
+            </button>
           </div>
         </div>
 
@@ -94,7 +115,8 @@ export default function NotesPage() {
               <ExpandableNoteCard 
                 key={note.id} 
                 note={note} 
-                onToggleStatus={toggleStatus}
+                // Adaptamos para passar a função de toggle correta
+                onToggleStatus={() => handleToggle(note.id)}
                 onDelete={deleteNote}
               />
             ))}

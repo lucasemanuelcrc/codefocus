@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Note } from "@/types";
-import { Badge } from "@/components/ui/Badge";
-import { CodeBlock } from "@/components/ui/CodeBlock";
-import { Button } from "@/components/ui/Button";
+// 1. Importamos a definição oficial de Note do Contexto
+import { Note } from "@/context/NotesContext"; 
+import Link from "next/link";
+
+// --- ÍCONES ---
+const Icons = {
+  ChevronDown: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
+  Trash: <svg className="w-4 h-4" fill="none" viewBox="0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  ExternalLink: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+};
 
 interface ExpandableNoteCardProps {
-  note: Note;
+  // 2. Usamos o tipo 'Note' do contexto. Isso remove a exigência de 'language'
+  note: Note; 
   onToggleStatus: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -15,120 +22,94 @@ interface ExpandableNoteCardProps {
 export function ExpandableNoteCard({ note, onToggleStatus, onDelete }: ExpandableNoteCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Extração inteligente do conteúdo (caso tenha sido salvo concatenado ou em campo separado)
-  // Assumindo a estrutura do passo anterior onde concatenamos ou temos description limpa
-  const displayDescription = note.description.replace(/```[\s\S]*?```/g, '').trim();
+  // Status Styling
+  const statusColors = {
+    bug: "bg-red-500/10 text-red-400 border-red-500/20",
+    investigating: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    solved: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  };
   
-  // Tenta extrair código se estiver misturado na descrição (fallback) ou usa um campo dedicado se você tiver adicionado ao Type
-  const codeMatch = note.description.match(/```(\w+)?\n([\s\S]*?)\n```/);
-  const codeContent = codeMatch ? codeMatch[2] : ""; 
+  const statusLabels = {
+    bug: "BUG",
+    investigating: "INVESTIGATING",
+    solved: "SOLVED"
+  };
 
   return (
-    <div 
-      className={`
-        group relative rounded-xl border transition-all duration-300 overflow-hidden
-        ${isExpanded 
-          ? 'bg-slate-900/80 border-cyan-500/30 shadow-2xl shadow-cyan-900/10 ring-1 ring-cyan-500/20' 
-          : 'bg-slate-900/40 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40'}
-      `}
-    >
-      {/* --- HEADER (Sempre visível) --- */}
-      <div 
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="p-5 cursor-pointer flex items-start gap-4"
-      >
-        {/* Ícone de Status Lateral */}
-        <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 transition-colors ${note.status === 'resolved' ? 'bg-emerald-500 shadow-[0_0_8px_currentColor]' : 'bg-amber-500'}`} />
+    <div className="bg-[#0B1121] border border-slate-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-slate-700">
+      
+      {/* HEADER DO CARD (Sempre visível) */}
+      <div className="p-4 flex items-center justify-between gap-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+        
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          {/* Status Badge */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStatus(note.id);
+            }}
+            className={`px-2 py-1 rounded text-[10px] font-mono font-bold border transition-colors hover:brightness-125 ${statusColors[note.status]}`}
+          >
+            {statusLabels[note.status]}
+          </button>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-y-2 mb-2">
-            <h3 className={`text-base font-semibold transition-colors ${isExpanded ? 'text-white' : 'text-slate-200 group-hover:text-cyan-400'}`}>
-              {note.title}
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 font-mono hidden sm:inline-block">
-                {new Date(note.createdAt).toLocaleDateString()}
-              </span>
-              <Badge type="language" value={note.language} />
-            </div>
-          </div>
-          
-          {/* Preview Text (Só aparece quando fechado) */}
-          {!isExpanded && (
-            <p className="text-sm text-slate-500 line-clamp-1 font-mono opacity-80">
-              {displayDescription.slice(0, 120) || "Sem descrição adicional..."}
-            </p>
-          )}
+          {/* Título */}
+          <h3 className="text-slate-200 font-medium truncate pr-4">
+            {note.title}
+          </h3>
         </div>
 
-        {/* Chevron Icon */}
-        <div className={`text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-cyan-500' : ''}`}>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+        <div className="flex items-center gap-3 text-slate-500">
+            {/* Tags (Mobile hide) */}
+            <div className="hidden md:flex gap-2">
+                {note.tags?.slice(0, 2).map(tag => (
+                    <span key={tag} className="text-[10px] bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                        {tag}
+                    </span>
+                ))}
+            </div>
+
+            {/* Expand Icon */}
+            <div className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}>
+                {Icons.ChevronDown}
+            </div>
         </div>
       </div>
 
-      {/* --- EXPANDED CONTENT (Accordion) --- */}
-      <div 
-        className={`grid transition-[grid-template-rows] duration-300 ease-out ${isExpanded ? 'grid-rows-[1fr] border-t border-slate-800/50' : 'grid-rows-[0fr]'}`}
-      >
-        <div className="overflow-hidden">
-          <div className="p-6 pt-2 space-y-6 bg-slate-950/30">
+      {/* BODY DO CARD (Expansível) */}
+      {isExpanded && (
+        <div className="px-4 pb-4 pt-0 animate-fade-in-down">
+            <div className="h-px w-full bg-slate-800/50 mb-4"></div>
             
-            {/* Descrição Completa */}
-            <div>
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Contexto do Problema</h4>
-              <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                {displayDescription}
-              </p>
-            </div>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+                {note.description || "Sem descrição."}
+            </p>
 
-            {/* Bloco de Código (Se houver) */}
-            {codeContent && (
-              <div>
-                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Snippet do Erro</h4>
-                 <CodeBlock code={codeContent} language={note.language} />
-              </div>
+            {note.codeSnippet && (
+                <div className="bg-[#020617] p-3 rounded-lg border border-slate-800 mb-4 overflow-x-auto">
+                    <pre className="text-xs font-mono text-cyan-100">
+                        {note.codeSnippet}
+                    </pre>
+                </div>
             )}
 
-            {/* Solução (Se houver) */}
-            {note.solution && (
-              <div className="bg-emerald-950/10 border border-emerald-900/20 rounded-lg p-4">
-                <h4 className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"/> Solução Aplicada
-                </h4>
-                <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                  {note.solution}
-                </p>
-              </div>
-            )}
-
-            {/* Actions Footer */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-800/50">
-               <Button 
-                 variant="outline" 
-                 size="sm" 
-                 onClick={() => onToggleStatus(note.id)}
-                 className={note.status === 'open' ? 'hover:text-emerald-400 hover:border-emerald-500/30' : 'hover:text-amber-400'}
-               >
-                 {note.status === 'open' ? 'Marcar como Resolvido' : 'Reabrir Problema'}
-               </Button>
-               
-               <Button 
-                 variant="danger" 
-                 size="sm" 
-                 onClick={(e) => {
-                   e.stopPropagation();
-                   if(confirm('Tem certeza? Essa ação é irreversível.')) onDelete(note.id);
-                 }}
-               >
-                 Excluir Registro
-               </Button>
+            <div className="flex justify-end gap-3 mt-2">
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onDelete(note.id); }}
+                    className="flex items-center gap-2 text-xs text-slate-500 hover:text-red-400 transition-colors px-3 py-1.5 hover:bg-red-500/10 rounded"
+                >
+                    {Icons.Trash} Excluir
+                </button>
+                
+                <Link 
+                    href={`/notes/${note.id}`}
+                    className="flex items-center gap-2 text-xs text-cyan-500 hover:text-cyan-400 transition-colors px-3 py-1.5 hover:bg-cyan-500/10 rounded"
+                >
+                    {Icons.ExternalLink} Abrir Detalhes
+                </Link>
             </div>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
