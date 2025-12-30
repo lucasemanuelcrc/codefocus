@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google"; // 1. Importando a fonte mono
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { NotesProvider } from "@/context/NotesContext";
+// 1. IMPORTAR O TOASTER
+import { Toaster } from "sonner";
 
-// 2. Configurando Inter como variável CSS
 const inter = Inter({ 
   subsets: ["latin"],
   variable: "--font-sans", 
   display: "swap",
 });
 
-// 3. Configurando JetBrains Mono como variável CSS (para códigos)
 const jetbrainsMono = JetBrains_Mono({ 
   subsets: ["latin"], 
   variable: "--font-mono", 
@@ -31,11 +31,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // 4. suppressHydrationWarning resolve o erro de atributos extras do navegador/extensões
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans bg-[#020617] text-slate-200 antialiased selection:bg-cyan-500/30 selection:text-cyan-100`}>
         <NotesProvider>
           {children}
+          
+          {/* 2. ADICIONAR O COMPONENTE VISUAL */}
+          <Toaster 
+            richColors 
+            theme="dark" 
+            position="top-center" 
+            closeButton
+          />
         </NotesProvider>
       </body>
     </html>

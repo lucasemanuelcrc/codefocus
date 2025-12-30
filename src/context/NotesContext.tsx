@@ -1,17 +1,18 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+// 1. IMPORTAR A FUNÇÃO TOAST
+import { toast } from "sonner";
 
-// 1. Definição Tipada da Nota (Developer-First)
 export type NoteStatus = "bug" | "investigating" | "solved";
 
 export interface Note {
   id: string;
   title: string;
   description: string;
-  codeSnippet?: string; // Novo: Código do erro ou solução
-  tags: string[];       // Novo: Stack (React, TS, etc)
-  status: NoteStatus;   // Novo: Estado do problema
+  codeSnippet?: string;
+  tags: string[];
+  status: NoteStatus;
   createdAt: string;
 }
 
@@ -20,7 +21,7 @@ interface NotesContextType {
   isLoading: boolean;
   addNote: (note: Omit<Note, "id" | "createdAt">) => void;
   deleteNote: (id: string) => void;
-  updateStatus: (id: string, newStatus: NoteStatus) => void; // Novo: Quick Toggle
+  updateStatus: (id: string, newStatus: NoteStatus) => void;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -29,7 +30,6 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar do LocalStorage
   useEffect(() => {
     const saved = localStorage.getItem("codefocus-notes");
     if (saved) {
@@ -42,7 +42,6 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  // Salvar no LocalStorage
   useEffect(() => {
     if (!isLoading) {
       localStorage.setItem("codefocus-notes", JSON.stringify(notes));
@@ -55,19 +54,41 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
       ...noteData,
     };
-    // Adiciona no topo da lista
     setNotes((prev) => [newNote, ...prev]);
+    
+    // 2. FEEDBACK DE SUCESSO
+    toast.success("Registro criado!", {
+      description: `"${newNote.title}" foi adicionado ao workspace.`,
+    });
   };
 
   const deleteNote = (id: string) => {
+    // Salvamos a nota antes de deletar para poder desfazer (Opcional, mas elegante)
+    const noteToDelete = notes.find(n => n.id === id);
+    
     setNotes((prev) => prev.filter((n) => n.id !== id));
+    
+    // 3. FEEDBACK DE REMOÇÃO COM UNDO (DESFAZER)
+    toast.error("Registro movido para lixeira", {
+      description: noteToDelete?.title,
+      action: {
+        label: "Desfazer",
+        onClick: () => {
+          if (noteToDelete) {
+             setNotes((prev) => [noteToDelete, ...prev]);
+             toast.success("Ação desfeita.");
+          }
+        },
+      },
+    });
   };
 
-  // Função para mudar status sem abrir a nota
   const updateStatus = (id: string, newStatus: NoteStatus) => {
     setNotes((prev) =>
       prev.map((n) => (n.id === id ? { ...n, status: newStatus } : n))
     );
+    // Nota: Geralmente não mostramos toast para mudança de status rápida 
+    // para não poluir a tela, mas você pode adicionar se quiser.
   };
 
   return (

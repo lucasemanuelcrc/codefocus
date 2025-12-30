@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-// CORREÇÃO: Hooks de navegação vêm de 'next/navigation', não de 'next/link'
-import { useParams, useRouter } from "next/navigation"; 
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useNotes, NoteStatus } from "@/context/NotesContext";
+// 1. Importação do Sonner
+import { toast } from "sonner";
 
 // --- ÍCONES ---
 const Icons = {
@@ -12,6 +12,7 @@ const Icons = {
   Trash: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Calendar: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
   Tag: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>,
+  Copy: <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
 };
 
 // --- BADGE DE STATUS ---
@@ -34,14 +35,14 @@ function StatusBadge({ status, onClick }: { status: NoteStatus; onClick?: () => 
 }
 
 export default function NoteDetailsPage() {
-  const params = useParams(); // Hook correto
-  const router = useRouter(); // Hook correto
+  const params = useParams();
+  const router = useRouter();
   const { notes, isLoading, deleteNote, updateStatus } = useNotes();
   
-  // Busca a nota correspondente ao ID da URL
   const note = notes.find((n) => n.id === params.id);
 
   const handleDelete = () => {
+    // O toast de "deletado" já é disparado pelo Context, então só precisamos confirmar e redirecionar
     if (confirm("Tem certeza que deseja excluir este registro?")) {
       if (note) deleteNote(note.id);
       router.push("/dashboard");
@@ -52,6 +53,17 @@ export default function NoteDetailsPage() {
     if (!note) return;
     const cycle: Record<NoteStatus, NoteStatus> = { bug: "investigating", investigating: "solved", solved: "bug" };
     updateStatus(note.id, cycle[note.status]);
+  };
+
+  // Função para copiar código com feedback do Sonner
+  const handleCopyCode = () => {
+    if (note?.codeSnippet) {
+      navigator.clipboard.writeText(note.codeSnippet);
+      toast.success("Código copiado!", {
+        description: "Pronto para colar no seu editor.",
+        duration: 2000,
+      });
+    }
   };
 
   if (isLoading) {
@@ -74,6 +86,8 @@ export default function NoteDetailsPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans pb-20">
+      
+      {/* Header */}
       <header className="border-b border-slate-800/60 bg-[#020617]/50 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium">
@@ -91,7 +105,10 @@ export default function NoteDetailsPage() {
         </div>
       </header>
 
+      {/* Conteúdo Principal */}
       <main className="max-w-4xl mx-auto px-6 py-10 animate-fade-in-up">
+        
+        {/* Info Header */}
         <div className="mb-8 space-y-4">
           <div className="flex flex-wrap items-center gap-3">
              <StatusBadge status={note.status} onClick={cycleStatus} />
@@ -113,6 +130,7 @@ export default function NoteDetailsPage() {
           </div>
         </div>
 
+        {/* Corpo da Nota */}
         <div className="grid gap-8">
           <div className="bg-[#0B1121]/50 border border-slate-800 rounded-xl p-6 md:p-8">
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Contexto & Descrição</h3>
@@ -121,18 +139,31 @@ export default function NoteDetailsPage() {
             </p>
           </div>
 
+          {/* Code Snippet com Botão de Copiar */}
           {note.codeSnippet && (
             <div className="space-y-2">
                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest px-1">Snippet / Log de Erro</h3>
+               
                <div className="bg-[#050a14] border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-                 <div className="flex items-center gap-2 px-4 py-2 bg-slate-900/50 border-b border-slate-800/50">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/20" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20" />
+                 <div className="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800/50">
+                    <div className="flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500/20" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20" />
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-mono ml-2">code-preview</span>
                     </div>
-                    <span className="text-[10px] text-slate-500 font-mono ml-2">code-preview</span>
+
+                    {/* Botão de Copiar Integrado */}
+                    <button 
+                        onClick={handleCopyCode}
+                        className="flex items-center gap-1.5 text-[10px] font-mono uppercase font-bold text-cyan-500 hover:text-cyan-300 transition-colors"
+                    >
+                        {Icons.Copy} Copiar
+                    </button>
                  </div>
+                 
                  <div className="p-6 overflow-x-auto">
                     <pre className="font-mono text-sm text-cyan-100 leading-relaxed">
                       {note.codeSnippet}
