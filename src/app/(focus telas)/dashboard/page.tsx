@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useNotes, NoteStatus, Note } from "@/context/NotesContext";
+// 1. Importação do Kanban
+import { KanbanBoard } from "@/components/domain/KanbanBoard";
 
 // --- ÍCONES ---
 const Icons = {
@@ -16,6 +18,9 @@ const Icons = {
   CheckCircle: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   AlertCircle: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Edit: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
+  // 2. Novos ícones para alternar visualização
+  LayoutGrid: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  LayoutKanban: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>,
 };
 
 // --- SKELETON LOADING ---
@@ -89,11 +94,14 @@ function StatCard({ label, value, icon, colorClass }: { label: string; value: nu
 export default function DashboardPage() {
   const { notes, addNote, updateNote, deleteNote, updateStatus, isLoading } = useNotes();
   
-  // Controle de Estado Local (Simples e Rápido)
+  // Controle de Estado
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  
+  // 3. Estado da Visualização (Grid ou Kanban)
+  const [viewMode, setViewMode] = useState<'grid' | 'kanban'>('grid');
 
   // Form Fields
   const [newTitle, setNewTitle] = useState("");
@@ -120,6 +128,7 @@ export default function DashboardPage() {
     setNewTags(note.tags.join(", "));
     setEditingId(note.id);
     setIsCreating(true);
+    // Se estiver no Kanban, volta para grid ou apenas rola para cima
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -219,7 +228,25 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex gap-3 w-full md:w-auto">
+            <div className="flex gap-3 w-full md:w-auto items-center">
+               {/* 4. TOGGLE BUTTONS (Grid vs Kanban) */}
+               <div className="bg-[#0B1121] border border-slate-800 rounded-lg p-1 flex items-center">
+                  <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded transition-all ${viewMode === 'grid' ? 'bg-slate-800 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+                    title="Visualização em Grade"
+                  >
+                    {Icons.LayoutGrid}
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('kanban')}
+                    className={`p-2 rounded transition-all ${viewMode === 'kanban' ? 'bg-slate-800 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+                    title="Visualização Kanban"
+                  >
+                    {Icons.LayoutKanban}
+                  </button>
+               </div>
+
                <button 
                  onClick={() => { setIsCreating(!isCreating); setEditingId(null); setNewTitle(""); setNewDesc(""); setNewCode(""); setNewTags(""); }}
                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-lg shadow-cyan-900/20"
@@ -250,36 +277,58 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-10">
-            {filteredNotes.map((note) => (
-              <div key={note.id} className="group relative bg-[#0B1121]/80 backdrop-blur-sm border border-slate-800 rounded-xl overflow-hidden hover:border-cyan-500/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-900/5 hover:-translate-y-1 flex flex-col">
-                <Link href={`/notes/${note.id}`} className="absolute inset-0 z-0" />
-                <div className="p-5 flex flex-col h-full pointer-events-none">
-                  <div className="flex justify-between items-start mb-3 relative z-10 pointer-events-auto">
-                    <StatusBadge status={note.status} onClick={() => cycleStatus(note.status, note.id)} />
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); startEditing(note); }} className="text-slate-600 hover:text-cyan-400 p-1" title="Editar">{Icons.Edit}</button>
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteNote(note.id); }} className="text-slate-600 hover:text-red-400 p-1" title="Excluir">{Icons.Trash}</button>
-                    </div>
-                  </div>
-                  <div className="block flex-grow">
-                    <h3 className="text-base font-semibold text-slate-100 mb-2 group-hover:text-cyan-400 transition-colors">{note.title}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 mb-3">{note.description}</p>
-                  </div>
-                  {note.codeSnippet && (
-                     <div className="bg-[#020617] p-2.5 rounded border border-slate-800/50 font-mono text-[10px] text-cyan-200/70 overflow-hidden relative mb-3">
-                        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-cyan-500/30"></div>
-                        <code className="line-clamp-2">{note.codeSnippet}</code>
-                     </div>
-                  )}
-                  <div className="flex flex-wrap gap-2 mt-auto pt-2 border-t border-slate-800/50">
-                    {note.tags?.map((tag, i) => <span key={i} className="text-[9px] bg-slate-800/50 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700/50">#{tag}</span>)}
-                  </div>
+          {/* 5. RENDERIZAÇÃO CONDICIONAL (Grid ou Kanban) */}
+          {filteredNotes.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-20 opacity-40 border-2 border-dashed border-slate-800 rounded-xl">
+                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-500">
+                   {Icons.Search}
                 </div>
-              </div>
-            ))}
-          </div>
+                <p className="text-slate-400">Nenhum registro encontrado.</p>
+             </div>
+          ) : (
+             <>
+               {viewMode === 'grid' ? (
+                 // --- MODO GRID ---
+                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-10 animate-fade-in-up">
+                    {filteredNotes.map((note) => (
+                      <div key={note.id} className="group relative bg-[#0B1121]/80 backdrop-blur-sm border border-slate-800 rounded-xl overflow-hidden hover:border-cyan-500/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-900/5 hover:-translate-y-1 flex flex-col">
+                        <Link href={`/notes/${note.id}`} className="absolute inset-0 z-0" />
+                        <div className="p-5 flex flex-col h-full pointer-events-none">
+                          <div className="flex justify-between items-start mb-3 relative z-10 pointer-events-auto">
+                            <StatusBadge status={note.status} onClick={() => cycleStatus(note.status, note.id)} />
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); startEditing(note); }} className="text-slate-600 hover:text-cyan-400 p-1" title="Editar">{Icons.Edit}</button>
+                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteNote(note.id); }} className="text-slate-600 hover:text-red-400 p-1" title="Excluir">{Icons.Trash}</button>
+                            </div>
+                          </div>
+                          <div className="block flex-grow">
+                            <h3 className="text-base font-semibold text-slate-100 mb-2 group-hover:text-cyan-400 transition-colors">{note.title}</h3>
+                            <p className="text-xs text-slate-400 line-clamp-2 mb-3">{note.description}</p>
+                          </div>
+                          {note.codeSnippet && (
+                             <div className="bg-[#020617] p-2.5 rounded border border-slate-800/50 font-mono text-[10px] text-cyan-200/70 overflow-hidden relative mb-3">
+                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-cyan-500/30"></div>
+                                <code className="line-clamp-2">{note.codeSnippet}</code>
+                             </div>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-auto pt-2 border-t border-slate-800/50">
+                            {note.tags?.map((tag, i) => <span key={i} className="text-[9px] bg-slate-800/50 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700/50">#{tag}</span>)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                 </div>
+               ) : (
+                 // --- MODO KANBAN ---
+                 <div className="h-full pb-10 animate-fade-in-up">
+                    <KanbanBoard 
+                       notes={filteredNotes} 
+                       onStatusChange={updateStatus} 
+                    />
+                 </div>
+               )}
+             </>
+          )}
         </div>
       </main>
     </div>
